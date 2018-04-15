@@ -29,7 +29,7 @@ app.post('/spotify/create-playlist', function(req, res) {
       	headers: {
         	'Authorization': 'Bearer ' + spotify.bearer,
       	},
-      	body: JSON.stringify({name: "test", public: false}),
+      	body: JSON.stringify({name: 'DGD - test', public: false}),
       	dataType:'json'
     };
 
