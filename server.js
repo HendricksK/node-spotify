@@ -10,16 +10,31 @@ var app = express();
 const port = 8081;
 
 app.get('/spotify/get-recent', function(req, res) {
-	
-	request({
-		method: 'GET',
-		uri: 'https://api.spotify.com/v1/me/player/recently-played',
-		type: 'json',
-		'auth': {
-		    'bearer': spotify.bearer
-		}, 
-	}, function(error, response, body) {
+
+	var options = {
+		url: 'https://api.spotify.com/v1/me/player/recently-played',
+		headers: { 'Authorization': 'Bearer ' + spotify.bearer },
+		dataType:'json'
+	}
+
+	request.get(options, function(error, response, body) {
 		res.send(response.body);
+	});
+});
+
+app.post('/spotify/create-playlist', function(req, res) {
+
+	var options = {
+	    url: 'https://api.spotify.com/v1/users/' + spotify.user_id + '/playlists',
+      	headers: {
+        	'Authorization': 'Bearer ' + spotify.bearer,
+      	},
+      	body: JSON.stringify({name: "test", public: false}),
+      	dataType:'json'
+    };
+
+    request.post(options, function(error, response, body) {
+    	res.send(response.body);
 	});
 });
 
