@@ -67,6 +67,8 @@ app.get('/spotify/first-time-auth/', function(req, res){
 app.get('/spotify/save-access-token', function(req,res) {
 	user_approved_access_token = req.query.access_token;
 
+	console.log(user_approved_access_token)
+
 	if(user_approved_access_token === null) {
 		res.status(400); 
 		res.send('token could not be saved');
@@ -84,15 +86,30 @@ app.get('/spotify/refresh-auth/', function(req, res){
 app.get('/spotify/get-recent', function(req, res) {
 
 	var options = {
-		url: 'https://api.spotify.com/v1/me/player/recently-played',
+		url: 'https://api.spotify.com/v1/me/player/recently-played' + '?type=track&limit=50',
 		headers: { 'Authorization': 'Bearer ' + user_approved_access_token },
 		dataType:'json'
 	}
 
 	request.get(options, function(error, response, body) {
-		res.send(response.body);
+
+		var response = JSON.parse(response.body);
+		var tracks = '';
+		var items = response.items
+		
+		var x = 0;
+
+		res.send(items);
+
+		items.forEach(function(item) {
+			tracks = tracks + encodeURIComponent(item.track.uri) + ',';
+		});
+
+		createPlaylist(tracks);
+
 	});
 });
+
 
 app.post('/spotify/create-playlist', function(req, res) {
 
@@ -106,15 +123,55 @@ app.post('/spotify/create-playlist', function(req, res) {
     };
 
     request.post(options, function(error, response, body) {
-    	res.send(response.body);
+		
+    		    	
 	});
 });
+
+function createPlaylist(tracks) {
+
+	var track_string = tracks;
+
+	console.log(track_string)
+
+	var playlist_name = new Date();
+
+	var options = {
+	    url: 'https://api.spotify.com/v1/users/' + spotify.user_id + '/playlists',
+      	headers: {
+        	'Authorization': 'Bearer ' + user_approved_access_token,
+      	},
+      	body: JSON.stringify({name: playlist_name, public: true}),
+      	dataType:'json'
+    };
+
+    request.post(options, function(error, response, body) {
+		// res.send(response.body);
+
+		var response = JSON.parse(response.body);
+		var playlist_id = response.id;
+
+		var options = {
+			url: 'https://api.spotify.com/v1/users/' + spotify.user_id + '/playlists/' + playlist_id +
+			'/tracks?uris=' + track_string,
+	      	headers: {
+	        	'Authorization': 'Bearer ' + user_approved_access_token,
+	      	},
+	      	dataType:'json'
+		}
+
+		request.post(options, function(error, response, body) {
+			console.log(response.body);
+		});
+
+	});
+}
 
 app.get('/spotify/auth/', function(req,res) {
 	var options = {
 		url: 'https://accounts.spotify.com/authorize?response_type=token' +
 			'&client_id=' + spotify.client_id + 
-			'&scope=playlist-modify-private playlist-modify-public' +
+			'&scope=playlist-modify-private playlist-modify-public user-read-recently-played' +
 			'&redirect_uri=http://localhost:3000/spotify/first-time-auth?' +
 			'&expires_in=10000',
 		headers: { 'Authorization': 'Bearer ' + spotify.bearer },
@@ -128,7 +185,7 @@ app.get('/spotify/auth/refresh', function(req,res) {
 	var options = {
 		url: 'https://accounts.spotify.com/authorize?response_type=token' +
 			'&client_id=' + spotify.client_id + 
-			'&scope=playlist-modify-private playlist-modify-public?' +
+			'&scope=playlist-modify-private playlist-modify-public user-read-recently-played' +
 			'&redirect_uri=http://localhost:3000' +
 			'&expires_in=10000',
 		headers: { 'Authorization': 'Bearer ' + spotify.bearer },
@@ -137,6 +194,23 @@ app.get('/spotify/auth/refresh', function(req,res) {
 
 	res.redirect(options.url);
 });
+
+function refreshAuthToke() {
+	app.get('/spotify/auth/', function(req,res) {
+		var options = {
+			url: 'https://accounts.spotify.com/authorize?response_type=token' +
+				'&client_id=' + spotify.client_id + 
+				'&scope=playlist-modify-private playlist-modify-public' +
+				'&redirect_uri=http://localhost:3000/spotify/first-time-auth?' +
+				'&expires_in=10000',
+			headers: { 'Authorization': 'Bearer ' + spotify.bearer },
+			dataType:'json'
+		}
+
+		res.redirect(options.url);
+	});
+
+}
 
 app.listen(port, () => {
     console.log('We are live on ' + port);
