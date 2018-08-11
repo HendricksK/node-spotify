@@ -2,16 +2,18 @@ var express = require('express'); // Express web server framework
 var request = require('request'); // "Request" library
 var querystring = require('querystring');
 var cookieParser = require('cookie-parser');
-
 var spotify = require('./config/spotify.json');
+var engines = require('consolidate');
+var request = require('request'); // "Request" library
+var path    = require("path");
 
 var app = express();
+var access_token;
 
 const port = 3000;
+var user_approved_access_token;
 
-var request = require('request'); // "Request" library
-
-var access_token;
+app.use(express.static(__dirname + '/View'));
 
 // your application requests authorization
 var authOptions = {
@@ -52,6 +54,21 @@ app.get('/ping', function(req, res){
 	res.send(access_token);
 });
 
+app.get('/spotify/first-time-auth/', function(req, res){
+
+	user_approved_access_token = req.query.access_token; 
+
+	// console.log(req.baseUrl);
+	console.log(user_approved_access_token);
+
+	res.sendFile(path.join(__dirname+'/views/first-time-auth.html'));
+});
+
+app.get('/spotify/refresh-auth/', function(req, res){ 
+	
+	res.sendFile(path.join(__dirname+'/views/refresh-auth.html'));
+});
+
 app.get('/spotify/get-recent', function(req, res) {
 
 	var options = {
@@ -70,7 +87,7 @@ app.post('/spotify/create-playlist', function(req, res) {
 	var options = {
 	    url: 'https://api.spotify.com/v1/users/' + spotify.user_id + '/playlists',
       	headers: {
-        	'Authorization': 'Bearer ' + access_token,
+        	'Authorization': 'Bearer ' + user_approved_access_token,
       	},
       	body: JSON.stringify({name: 'DGD - test', public: false}),
       	dataType:'json'
@@ -81,22 +98,33 @@ app.post('/spotify/create-playlist', function(req, res) {
 	});
 });
 
-app.post('/spotify/auth/', function(req,res) {
+app.get('/spotify/auth/', function(req,res) {
 	var options = {
 		url: 'https://accounts.spotify.com/authorize?response_type=token' +
 			'&client_id=' + spotify.client_id + 
 			'&scope=playlist-modify-private playlist-modify-public' +
-			'&redirect_uri=http://localhost:3000',
+			'&redirect_uri=http://localhost:3000/spotify/first-time-auth' +
+			'&expires_in=10000',
 		headers: { 'Authorization': 'Bearer ' + spotify.bearer },
 		dataType:'json'
 	}
 
-	console.log(options.url)
+	res.redirect(options.url);
+});
 
-	request.get(options, function(error, response, body) {
-		res.send(response.body);
-	});
-})
+app.get('/spotify/auth/refresh', function(req,res) {
+	var options = {
+		url: 'https://accounts.spotify.com/authorize?response_type=token' +
+			'&client_id=' + spotify.client_id + 
+			'&scope=playlist-modify-private playlist-modify-public' +
+			'&redirect_uri=http://localhost:3000' +
+			'&expires_in=10000',
+		headers: { 'Authorization': 'Bearer ' + spotify.bearer },
+		dataType:'json'
+	}
+
+	res.redirect(options.url);
+});
 
 app.listen(port, () => {
     console.log('We are live on ' + port);
