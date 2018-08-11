@@ -59,8 +59,6 @@ app.get('/ping', function(req, res){
 
 app.get('/spotify/first-time-auth/', function(req, res){
 
-	// user_approved_access_token = req.query.access_token; 
-
 	res.sendFile(path.join(__dirname+'/views/first-time-auth.html'));
 });
 
@@ -83,7 +81,7 @@ app.get('/spotify/refresh-auth/', function(req, res){
 	res.sendFile(path.join(__dirname+'/views/refresh-auth.html'));
 });
 
-app.get('/spotify/get-recent', function(req, res) {
+app.get('/spotify/create-playlist-from-recent', function(req, res) {
 
 	var options = {
 		url: 'https://api.spotify.com/v1/me/player/recently-played' + '?type=track&limit=50',
@@ -99,7 +97,7 @@ app.get('/spotify/get-recent', function(req, res) {
 		
 		var x = 0;
 
-		res.send(items);
+		//need to check for the auth token, currently breaks after 3600 seconds
 
 		items.forEach(function(item) {
 			tracks = tracks + encodeURIComponent(item.track.uri) + ',';
@@ -110,29 +108,9 @@ app.get('/spotify/get-recent', function(req, res) {
 	});
 });
 
-
-app.post('/spotify/create-playlist', function(req, res) {
-
-	var options = {
-	    url: 'https://api.spotify.com/v1/users/' + spotify.user_id + '/playlists',
-      	headers: {
-        	'Authorization': 'Bearer ' + user_approved_access_token,
-      	},
-      	body: JSON.stringify({name: 'DGD - test', public: false}),
-      	dataType:'json'
-    };
-
-    request.post(options, function(error, response, body) {
-		
-    		    	
-	});
-});
-
 function createPlaylist(tracks) {
 
 	var track_string = tracks;
-
-	console.log(track_string)
 
 	var playlist_name = new Date();
 
@@ -161,7 +139,7 @@ function createPlaylist(tracks) {
 		}
 
 		request.post(options, function(error, response, body) {
-			console.log(response.body);
+			return response.body;
 		});
 
 	});
