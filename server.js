@@ -3,7 +3,6 @@ var request = require('request'); // "Request" library
 var querystring = require('querystring');
 var cookieParser = require('cookie-parser');
 var spotify = require('./config/spotify.json');
-var engines = require('consolidate');
 var request = require('request'); // "Request" library
 var path    = require("path");
 var bodyParser = require('body-parser');
@@ -103,47 +102,19 @@ app.get('/spotify/create-playlist-from-recent', function(req, res) {
 			tracks = tracks + encodeURIComponent(item.track.uri) + ',';
 		});
 
-		createPlaylist(tracks);
+		// createPlaylist(tracks);
+
+		exports.createPlaylist(tracks)  // Returns a Promise!
+		  .then(data => {
+		  	res.send(data)
+		    // Do stuff with users
+		  })
+		  .catch(err => {
+		    // handle errors
+		  })
 
 	});
 });
-
-function createPlaylist(tracks) {
-
-	var track_string = tracks;
-
-	var playlist_name = new Date();
-
-	var options = {
-	    url: 'https://api.spotify.com/v1/users/' + spotify.user_id + '/playlists',
-      	headers: {
-        	'Authorization': 'Bearer ' + user_approved_access_token,
-      	},
-      	body: JSON.stringify({name: playlist_name, public: true}),
-      	dataType:'json'
-    };
-
-    request.post(options, function(error, response, body) {
-		// res.send(response.body);
-
-		var response = JSON.parse(response.body);
-		var playlist_id = response.id;
-
-		var options = {
-			url: 'https://api.spotify.com/v1/users/' + spotify.user_id + '/playlists/' + playlist_id +
-			'/tracks?uris=' + track_string,
-	      	headers: {
-	        	'Authorization': 'Bearer ' + user_approved_access_token,
-	      	},
-	      	dataType:'json'
-		}
-
-		request.post(options, function(error, response, body) {
-			return response.body;
-		});
-
-	});
-}
 
 app.get('/spotify/auth/', function(req,res) {
 	var options = {
@@ -188,6 +159,54 @@ function refreshAuthToke() {
 		res.redirect(options.url);
 	});
 
+}
+
+exports.createPlaylist = function createPlaylist (tracks) {
+  // Return the Promise right away, unless you really need to
+  // do something before you create a new Promise, but usually
+  // this can go into the function below
+  return new Promise((resolve, reject) => {
+    // reject and resolve are functions provided by the Promise
+    // implementation. Call only one of them.
+
+    var track_string = tracks;
+
+	var playlist_name = new Date();
+
+	var options = {
+	    url: 'https://api.spotify.com/v1/users/' + spotify.user_id + '/playlists',
+      	headers: {
+        	'Authorization': 'Bearer ' + user_approved_access_token,
+      	},
+      	body: JSON.stringify({name: playlist_name, public: true}),
+      	dataType:'json'
+    };
+
+    request.post(options, function(error, response, body) {
+		// res.send(response.body);
+
+		var response = JSON.parse(response.body);
+		var playlist_id = response.id;
+
+		var options = {
+			url: 'https://api.spotify.com/v1/users/' + spotify.user_id + '/playlists/' + playlist_id +
+			'/tracks?uris=' + track_string,
+	      	headers: {
+	        	'Authorization': 'Bearer ' + user_approved_access_token,
+	      	},
+	      	dataType:'json'
+		}
+
+		request.post(options, function(error, response, body) {
+			if(error) {
+				return reject(error)
+			}
+			return resolve(response.body);
+		});
+
+	});
+    
+  })
 }
 
 app.listen(port, () => {
