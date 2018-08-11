@@ -6,5 +6,30 @@
 <body>
 	I do nothing so far, 
 	I might congratulate you though :)
+
+	<script type="text/javascript">
+
+		// var access_token = substr(1);
+		var url_hashes = window.location.hash.split('=')
+		var access_toke = url_hashes[1]
+		access_toke = access_toke.replace('&token_type', '') 	
+
+		var xhr = new XMLHttpRequest();
+
+		xhr.open('GET', 'http://localhost:3000/spotify/save-access-token?access_token=' + access_toke );
+
+		xhr.onload = function() {
+			
+		    if (xhr.status === 200) {
+		        // alert('User\'s name is ' + xhr.responseText);
+		        console.log(xhr.responseText)
+		    }
+		    else {
+		        console.log('mission has failed to launch')
+		    }
+		};
+	xhr.send();
+
+	</script>
 </body>
 </html>
