@@ -51,17 +51,26 @@ request.post(authOptions, function(error, response, body) {
 
 ///my API calls below
 
+app.get('/', function(req, res){
+	res.send('...');
+});
+
 app.get('/ping', function(req, res){ 
 
 	res.send(access_token);
 });
 
-app.get('/spotify/first-time-auth/', function(req, res){
+app.get('/first-time-auth/', function(req, res){
 
 	res.sendFile(path.join(__dirname+'/views/first-time-auth.html'));
 });
 
-app.get('/spotify/save-access-token', function(req,res) {
+app.get('/refresh-auth/', function(req, res){ 
+	
+	res.sendFile(path.join(__dirname+'/views/auth-refresh.html'));
+});
+
+app.get('/save-access-token', function(req,res) {
 	user_approved_access_token = req.query.access_token;
 
 	console.log(user_approved_access_token)
@@ -75,10 +84,7 @@ app.get('/spotify/save-access-token', function(req,res) {
 	}		
 });
 
-app.get('/spotify/refresh-auth/', function(req, res){ 
-	
-	res.sendFile(path.join(__dirname+'/views/refresh-auth.html'));
-});
+
 
 app.get('/spotify/create-playlist-from-recent', function(req, res) {
 
@@ -116,49 +122,116 @@ app.get('/spotify/create-playlist-from-recent', function(req, res) {
 	});
 });
 
-app.get('/spotify/auth/', function(req,res) {
+/**
+ get specific history for specific time
+ to get 50 songs for that specific day
+*/
+app.get('/get-play-history/:date_time', function(req, res) {
+
+	// refreshAuthToken();
+
+	var dateTime = req.params.date_time;
+	dateTime = new Date(dateTime);
+	dateTime = dateTime.getTime() / 1000;
+	var tracks = '';
+	// res.send('timestamp -> ' + dateTime);
+
 	var options = {
-		url: 'https://accounts.spotify.com/authorize?response_type=token' +
-			'&client_id=' + spotify.client_id + 
-			'&scope=playlist-modify-private playlist-modify-public user-read-recently-played' +
-			'&redirect_uri=http://localhost:3000/spotify/first-time-auth?' +
-			'&expires_in=10000',
-		headers: { 'Authorization': 'Bearer ' + spotify.bearer },
+		url: 'https://api.spotify.com/v1/me/player/recently-played' + 
+		'?type=track&limit=50' + 
+		'&after=' + dateTime,
+		headers: { 'Authorization': 'Bearer ' + user_approved_access_token },
 		dataType:'json'
 	}
 
-	res.redirect(options.url);
-});
+	request.get(options, function(error, response, body) {
 
-app.get('/spotify/auth/refresh', function(req,res) {
-	var options = {
-		url: 'https://accounts.spotify.com/authorize?response_type=token' +
-			'&client_id=' + spotify.client_id + 
-			'&scope=playlist-modify-private playlist-modify-public user-read-recently-played' +
-			'&redirect_uri=http://localhost:3000' +
-			'&expires_in=10000',
-		headers: { 'Authorization': 'Bearer ' + spotify.bearer },
-		dataType:'json'
-	}
+		var response = JSON.parse(response.body);
+		var items = response.items
+		
+		var x = 0;
 
-	res.redirect(options.url);
-});
+		console.log(response);
 
-function refreshAuthToke() {
-	app.get('/spotify/auth/', function(req,res) {
-		var options = {
-			url: 'https://accounts.spotify.com/authorize?response_type=token' +
-				'&client_id=' + spotify.client_id + 
-				'&scope=playlist-modify-private playlist-modify-public' +
-				'&redirect_uri=http://localhost:3000/spotify/first-time-auth?' +
-				'&expires_in=10000',
-			headers: { 'Authorization': 'Bearer ' + spotify.bearer },
-			dataType:'json'
+		//need to check for the auth token, currently breaks after 3600 seconds
+
+		items.forEach(function(item) {
+			tracks = tracks + encodeURIComponent(item.track.uri) + ',';
+		});
+
+		if(tracks != '' || tracks != null) {
+			res.send('track list' + tracks);	
+			return true;
+		} else {
+			return false;
 		}
 
-		res.redirect(options.url);
 	});
 
+	
+
+	
+});
+
+
+/**
+ first point of call does auth for app where you
+ gets auth from spotify servers
+*/
+app.get('/auth/', function(req,res) {
+	var options = {
+		url: 'https://accounts.spotify.com/authorize?response_type=token' +
+			'&client_id=' + spotify.client_id + 
+			'&scope=playlist-modify-private playlist-modify-public user-read-recently-played' +
+			'&redirect_uri=http://spotify.local/first-time-auth?' +
+			'&expires_in=10000',
+		headers: { 'Authorization': 'Bearer ' + spotify.bearer },
+		dataType:'json'
+	}
+
+	res.redirect(options.url);
+});
+
+/**
+ will be used when any other end point is called to refresh 
+ the auth token given to us from spotify
+ so we can continuously use the same one
+ there will be times where we need to do a fresh auth
+*/
+app.get('/auth/refresh', function(req,res) {
+
+	var options = {
+		url: 'https://accounts.spotify.com/authorize?response_type=token' +
+			'&client_id=' + spotify.client_id + 
+			'&scope=playlist-modify-private playlist-modify-public user-read-recently-played' +
+			'&redirect_uri=http://spotify.local/refresh-auth?' +
+			'&expires_in=10000',
+		headers: { 'Authorization': 'Bearer ' + spotify.bearer },
+		dataType:'json'
+	}
+
+	res.redirect(options.url);
+});
+
+/**
+ function refreshAuthToken
+ will be used when any other end point is called to refresh 
+ the auth token given to us from spotify
+ so we can continuously use the same one
+ there will be times where we need to do a fresh auth
+*/
+function refreshAuthToken() {
+	var options = {
+		url: 'https://accounts.spotify.com/authorize?response_type=token' +
+			'&client_id=' + spotify.client_id + 
+			'&scope=playlist-modify-private playlist-modify-public user-read-recently-played' +
+			'&redirect_uri=http://spotify.local/refresh-auth?' +
+			'&expires_in=10000',
+		headers: { 'Authorization': 'Bearer ' + spotify.bearer },
+		dataType:'json'
+	}
+
+	request.redirect(options.url);
 }
 
 exports.createPlaylist = function createPlaylist (tracks) {

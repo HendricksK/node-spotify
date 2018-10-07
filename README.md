@@ -18,3 +18,10 @@ Learning about promises here
 
 going to look into using zapiers web hooks to build out a 'version' of CRON, going to try and use as little server / back-end infrastructure as possible
 ##https://zapier.com/engineering/using-webhooks/
+
+proxypass because node
+##https://www.digitalocean.com/community/tutorials/how-to-use-apache-http-server-as-reverse-proxy-using-mod_proxy-extension
+##https://stackoverflow.com/questions/9831594/apache-and-node-js-on-the-same-server#1860408
+
+adding supervisor nodemon is iffy with auto update after file changing
+##
