@@ -10,13 +10,18 @@
 	<script type="text/javascript">
 
 		// var access_token = substr(1);
-		var url_hashes = window.location.hash.split('=')
-		var access_token = url_hashes[1]
-		access_token = access_token.replace('&token_type', '') 	
+		// var url_hashes = window.location.hash.split('=')
+		// var access_token = url_hashes[1]
+		// access_token = access_token.replace('code', '')
+
+		var url = new URL(window.location);
+		access_token = url.search.replace('?code=','');
+
+		console.log(access_token)
 
 		var xhr = new XMLHttpRequest();
 
-		xhr.open('GET', 'http://spotify.local/save-access-token?access_token=' + access_token );
+		xhr.open('GET', 'http://spotify.local/spotify/save-access-token?access_token=' + access_token );
 
 		xhr.onload = function() {
 			

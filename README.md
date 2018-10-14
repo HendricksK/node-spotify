@@ -24,4 +24,4 @@ proxypass because node
 ##https://stackoverflow.com/questions/9831594/apache-and-node-js-on-the-same-server#1860408
 
 adding supervisor nodemon is iffy with auto update after file changing
-##
+##npm install supervisor -g
