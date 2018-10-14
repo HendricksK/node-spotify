@@ -86,10 +86,10 @@ app.get('/save-access-token', function(req,res) {
 
 
 
-app.get('/spotify/create-playlist-from-recent', function(req, res) {
+app.get('/create-playlist-from-recent', function(req, res) {
 
 	var options = {
-		url: 'https://api.spotify.com/v1/me/player/recently-played' + '?type=track&limit=50',
+		url: 'https://api.spotify.com/v1/me/player/recently-played' + '?type=track&limit=20',
 		headers: { 'Authorization': 'Bearer ' + user_approved_access_token },
 		dataType:'json'
 	}
@@ -183,7 +183,7 @@ app.get('/auth/', function(req,res) {
 		url: 'https://accounts.spotify.com/authorize?response_type=token' +
 			'&client_id=' + spotify.client_id + 
 			'&scope=playlist-modify-private playlist-modify-public user-read-recently-played' +
-			'&redirect_uri=http://spotify.local/first-time-auth?' +
+			'&redirect_uri=http://spotify.local/spotify/first-time-auth?' +
 			'&expires_in=10000',
 		headers: { 'Authorization': 'Bearer ' + spotify.bearer },
 		dataType:'json'
